@@ -1,0 +1,44 @@
+-- Day 1 KPI / sanity queries for support_ops (SQLite)
+
+-- 1) Tickets created per day
+SELECT
+  substr(created_at, 1, 10) AS created_date,
+  COUNT(*) AS tickets_created
+FROM tickets
+GROUP BY 1
+ORDER BY 1;
+
+-- 2) Backlog snapshot (Open + Pending)
+SELECT
+  status,
+  COUNT(*) AS tickets
+FROM tickets
+WHERE status IN ('Open','Pending')
+GROUP BY status
+ORDER BY tickets DESC;
+
+-- 3) Tickets by category
+SELECT
+  category,
+  COUNT(*) AS tickets
+FROM tickets
+GROUP BY category
+ORDER BY tickets DESC;
+
+-- 4) Tickets by priority (extra)
+SELECT
+  priority,
+  COUNT(*) AS tickets
+FROM tickets
+GROUP BY priority
+ORDER BY tickets DESC;
+
+-- 5) Ticket count by agent (extra)
+SELECT
+  a.agent_name,
+  COUNT(t.ticket_id) AS assigned_tickets
+FROM agents a
+LEFT JOIN tickets t
+  ON t.assigned_agent_id = a.agent_id
+GROUP BY a.agent_name
+ORDER BY assigned_tickets DESC;

@@ -1,0 +1,51 @@
+-- support_ops Seed data (SQLite)
+-- Clears tables and inserts a small dataset for Day 1 queries
+
+PRAGMA foreign_keys = ON;
+
+-- Clear existing data (order matters because of FK constraints)
+DELETE FROM interactions;
+DELETE FROM tickets;
+DELETE FROM agents;
+DELETE FROM customers;
+
+-- Customers
+INSERT INTO customers (customer_id, customer_name, segment, country) VALUES
+  (1, 'Northwind Labs', 'SMB', 'PL'),
+  (2, 'Contoso Health', 'Enterprise', 'US'),
+  (3, 'BluePeak Retail', 'MidMarket', 'DE'),
+  (4, 'Apex FinTech', 'Enterprise', 'UK');
+
+-- Agents
+INSERT INTO agents (agent_id, agent_name, team) VALUES
+  (1, 'Marta K.', 'L1'),
+  (2, 'Kamil S.', 'L1'),
+  (3, 'Ola P.', 'L2');
+
+-- Tickets
+INSERT INTO tickets (
+  ticket_id, customer_id, assigned_agent_id, category, priority, status,
+  created_at, resolved_at, closed_at, sla_minutes
+) VALUES
+  (101, 1, 1, 'Billing',   'Medium', 'Resolved', '2026-02-06 09:10:00', '2026-02-06 12:40:00', NULL,                  120),
+  (102, 2, 3, 'Technical', 'High',   'Open',     '2026-02-07 16:05:00', NULL,                  NULL,                  60),
+  (103, 3, 2, 'Product',   'Low',    'Closed',   '2026-02-08 10:20:00', '2026-02-08 15:00:00', '2026-02-09 09:05:00', 240),
+  (104, 4, 3, 'Account',   'Urgent', 'Pending',  '2026-02-09 11:55:00', NULL,                  NULL,                  30),
+  (105, 1, 1, 'Technical', 'High',   'Resolved', '2026-02-09 14:10:00', '2026-02-09 18:30:00', NULL,                  60),
+  (106, 2, 2, 'Other',     'Medium', 'Open',     '2026-02-10 08:25:00', NULL,                  NULL,                  120);
+
+-- Interactions
+INSERT INTO interactions (
+  interaction_id, ticket_id, actor_type, actor_id, interaction_type, created_at
+) VALUES
+  (1001, 101, 'Customer', NULL, 'Message', '2026-02-06 09:10:00'),
+  (1002, 101, 'Agent',    1,    'Message', '2026-02-06 10:05:00'),
+  (1003, 102, 'Customer', NULL, 'Message', '2026-02-07 16:05:00'),
+  (1004, 102, 'Agent',    3,    'Message', '2026-02-07 18:30:00'),
+  (1005, 103, 'Customer', NULL, 'Message', '2026-02-08 10:20:00'),
+  (1006, 103, 'Agent',    2,    'Message', '2026-02-08 10:55:00'),
+  (1007, 104, 'Customer', NULL, 'Message', '2026-02-09 11:55:00'),
+  (1008, 104, 'Agent',    3,    'Message', '2026-02-09 12:40:00'),
+  (1009, 105, 'Customer', NULL, 'Message', '2026-02-09 14:10:00'),
+  (1010, 105, 'Agent',    1,    'Message', '2026-02-09 14:35:00'),
+  (1011, 106, 'Customer', NULL, 'Message', '2026-02-10 08:25:00');

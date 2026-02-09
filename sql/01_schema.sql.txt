@@ -1,0 +1,57 @@
+-- support_ops SQL schema (SQLite)
+-- Creates tables + indexes for a simple Support Operations dataset
+
+PRAGMA foreign_keys = ON;
+
+-- Customers
+CREATE TABLE IF NOT EXISTS customers (
+  customer_id     INTEGER PRIMARY KEY,
+  customer_name   TEXT NOT NULL,
+  segment         TEXT NOT NULL CHECK (segment IN ('SMB','MidMarket','Enterprise')),
+  country         TEXT NOT NULL
+);
+
+-- Agents
+CREATE TABLE IF NOT EXISTS agents (
+  agent_id        INTEGER PRIMARY KEY,
+  agent_name      TEXT NOT NULL,
+  team            TEXT NOT NULL CHECK (team IN ('L1','L2','Specialist'))
+);
+
+-- Tickets
+CREATE TABLE IF NOT EXISTS tickets (
+  ticket_id         INTEGER PRIMARY KEY,
+  customer_id       INTEGER NOT NULL,
+  assigned_agent_id INTEGER,
+  category          TEXT NOT NULL CHECK (category IN ('Billing','Technical','Account','Product','Other')),
+  priority          TEXT NOT NULL CHECK (priority IN ('Low','Medium','High','Urgent')),
+  status            TEXT NOT NULL CHECK (status IN ('Open','Pending','Resolved','Closed')),
+  created_at        TEXT NOT NULL,
+  resolved_at       TEXT,
+  closed_at         TEXT,
+  sla_minutes       INTEGER NOT NULL,
+  FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+  FOREIGN KEY (assigned_agent_id) REFERENCES agents(agent_id)
+);
+
+-- Interactions (messages/events on a ticket)
+CREATE TABLE IF NOT EXISTS interactions (
+  interaction_id   INTEGER PRIMARY KEY,
+  ticket_id        INTEGER NOT NULL,
+  actor_type       TEXT NOT NULL CHECK (actor_type IN ('Customer','Agent','System')),
+  actor_id         INTEGER,
+  interaction_type TEXT NOT NULL CHECK (interaction_type IN ('Message','StatusChange','Note')),
+  created_at       TEXT NOT NULL,
+  FOREIGN KEY (ticket_id) REFERENCES tickets(ticket_id),
+  FOREIGN KEY (actor_id) REFERENCES agents(agent_id)
+);
+
+-- Indexes (basic performance helpers)
+CREATE INDEX IF NOT EXISTS idx_tickets_created_at
+  ON tickets(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_tickets_status
+  ON tickets(status);
+
+CREATE INDEX IF NOT EXISTS idx_interactions_ticket_created
+  ON interactions(ticket_id, created_at);
