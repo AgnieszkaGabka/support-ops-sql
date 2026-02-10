@@ -56,5 +56,15 @@ Tables:
 
 \- Next steps will expand data volume and add views for daily metrics \& SLA.
 
+## Day 2
+SLA and performance metrics:
+- Cycle time (created -> resolved) + SLA breach flag
+- SLA compliance rate (resolved tickets)
+- SLA breaches by priority
+- Avg time to resolve by category
+- Agent workload and resolution performance
+- First response time proxy (created -> first agent message)
+
+
 
 
