@@ -1,0 +1,109 @@
+-- Day 2: SLA + cycle time + agent performance (SQLite)
+-- Notes:
+-- - created_at/resolved_at/closed_at are stored as TEXT in 'YYYY-MM-DD HH:MM:SS'
+-- - We use julianday() to compute durations in minutes.
+
+-- 1) Ticket cycle time (minutes): created -> resolved, plus SLA breach flag
+SELECT
+  t.ticket_id,
+  t.priority,
+  t.status,
+  t.sla_minutes,
+  t.created_at,
+  t.resolved_at,
+  CASE
+    WHEN t.resolved_at IS NULL THEN NULL
+    ELSE ROUND((julianday(t.resolved_at) - julianday(t.created_at)) * 24 * 60, 1)
+  END AS minutes_to_resolve,
+  CASE
+    WHEN t.resolved_at IS NULL THEN NULL
+    WHEN (julianday(t.resolved_at) - julianday(t.created_at)) * 24 * 60 > t.sla_minutes THEN 1
+    ELSE 0
+  END AS sla_breached
+FROM tickets t
+ORDER BY t.ticket_id;
+
+-- 2) SLA compliance rate (resolved tickets only)
+SELECT
+  COUNT(*) AS resolved_tickets,
+  SUM(
+    CASE
+      WHEN (julianday(resolved_at) - julianday(created_at)) * 24 * 60 <= sla_minutes THEN 1
+      ELSE 0
+    END
+  ) AS met_sla,
+  ROUND(
+    100.0 * SUM(
+      CASE
+        WHEN (julianday(resolved_at) - julianday(created_at)) * 24 * 60 <= sla_minutes THEN 1
+        ELSE 0
+      END
+    ) / COUNT(*),
+    1
+  ) AS sla_compliance_pct
+FROM tickets
+WHERE resolved_at IS NOT NULL;
+
+-- 3) SLA breach count by priority (resolved only)
+SELECT
+  priority,
+  COUNT(*) AS resolved_tickets,
+  SUM(
+    CASE
+      WHEN (julianday(resolved_at) - julianday(created_at)) * 24 * 60 > sla_minutes THEN 1
+      ELSE 0
+    END
+  ) AS sla_breaches
+FROM tickets
+WHERE resolved_at IS NOT NULL
+GROUP BY priority
+ORDER BY sla_breaches DESC, resolved_tickets DESC;
+
+-- 4) Average minutes to resolve by category (resolved only)
+SELECT
+  category,
+  COUNT(*) AS resolved_tickets,
+  ROUND(AVG((julianday(resolved_at) - julianday(created_at)) * 24 * 60), 1) AS avg_minutes_to_resolve
+FROM tickets
+WHERE resolved_at IS NOT NULL
+GROUP BY category
+ORDER BY avg_minutes_to_resolve DESC;
+
+-- 5) Agent workload + resolution performance
+-- - workload: assigned tickets
+-- - resolved_by_agent: tickets with resolved_at not null
+-- - avg_minutes_to_resolve: average cycle time for resolved tickets by that agent
+SELECT
+  a.agent_name,
+  a.team,
+  COUNT(t.ticket_id) AS assigned_tickets,
+  SUM(CASE WHEN t.resolved_at IS NOT NULL THEN 1 ELSE 0 END) AS resolved_by_agent,
+  ROUND(AVG(CASE
+    WHEN t.resolved_at IS NULL THEN NULL
+    ELSE (julianday(t.resolved_at) - julianday(t.created_at)) * 24 * 60
+  END), 1) AS avg_minutes_to_resolve
+FROM agents a
+LEFT JOIN tickets t
+  ON t.assigned_agent_id = a.agent_id
+GROUP BY a.agent_name, a.team
+ORDER BY resolved_by_agent DESC, assigned_tickets DESC;
+
+-- 6) First response time proxy (minutes): created_at -> first agent interaction
+-- This uses interactions table: first Agent Message timestamp per ticket.
+WITH first_agent_msg AS (
+  SELECT
+    ticket_id,
+    MIN(created_at) AS first_agent_msg_at
+  FROM interactions
+  WHERE actor_type = 'Agent' AND interaction_type = 'Message'
+  GROUP BY ticket_id
+)
+SELECT
+  t.ticket_id,
+  t.created_at AS ticket_created_at,
+  fam.first_agent_msg_at,
+  ROUND((julianday(fam.first_agent_msg_at) - julianday(t.created_at)) * 24 * 60, 1) AS minutes_to_first_agent_message
+FROM tickets t
+LEFT JOIN first_agent_msg fam
+  ON fam.ticket_id = t.ticket_id
+ORDER BY t.ticket_id;
