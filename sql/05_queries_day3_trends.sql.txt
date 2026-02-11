@@ -1,5 +1,8 @@
 -- Day 3: Time-based trends and operational insights
 -- Focus: ticket volume trends, backlog trend, SLA compliance over time
+-- Business question:
+-- Is ticket volume increasing over time?
+-- This query shows daily ticket creation trend.
 
 -- 1) Tickets created per day (trend)
 SELECT

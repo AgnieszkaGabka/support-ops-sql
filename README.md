@@ -72,6 +72,19 @@ Time-based analysis:
 - SLA compliance trend over time
 - Ticket distribution by weekday
 
+## Project Structure
+
+sql/
+  01_schema.sql
+  02_seed.sql
+  03_queries_day1.sql
+  04_queries_day2_sla_agent_performance.sql
+  05_queries_day3_trends.sql
+
+The project is structured incrementally:
+- Day 1: baseline KPIs
+- Day 2: SLA and agent performance
+- Day 3: time-based trends
 
 
 
