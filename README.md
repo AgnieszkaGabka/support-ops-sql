@@ -65,6 +65,13 @@ SLA and performance metrics:
 - Agent workload and resolution performance
 - First response time proxy (created -> first agent message)
 
+## Day 3
+Time-based analysis:
+- Tickets created and resolved per day
+- Backlog snapshot by creation date
+- SLA compliance trend over time
+- Ticket distribution by weekday
+
 
 
 
