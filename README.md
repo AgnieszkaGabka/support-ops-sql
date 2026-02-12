@@ -72,6 +72,15 @@ Time-based analysis:
 - SLA compliance trend over time
 - Ticket distribution by weekday
 
+## Day 4
+Business-oriented analysis:
+- Ticket load by customer segment
+- Resolution time by segment
+- Workload distribution by team
+- Escalation proxy (L1 -> L2 involvement)
+- Priority vs SLA breach analysis
+
+
 ## Project Structure
 
 sql/
@@ -85,6 +94,7 @@ The project is structured incrementally:
 - Day 1: baseline KPIs
 - Day 2: SLA and agent performance
 - Day 3: time-based trends
+
 
 
 

@@ -1,0 +1,99 @@
+-- Day 4: Business-focused analysis
+-- Goal: move from technical metrics to decision-support analytics
+
+-- 1) Ticket volume by customer segment
+-- Business question: which customer segment generates the most operational load?
+
+SELECT
+  c.segment,
+  COUNT(t.ticket_id) AS tickets
+FROM customers c
+LEFT JOIN tickets t
+  ON t.customer_id = c.customer_id
+GROUP BY c.segment
+ORDER BY tickets DESC;
+
+------------------------------------------------------------
+
+-- 2) Average resolution time by customer segment (resolved only)
+-- Business question: are Enterprise clients handled faster?
+
+SELECT
+  c.segment,
+  COUNT(t.ticket_id) AS resolved_tickets,
+  ROUND(AVG(
+    (julianday(t.resolved_at) - julianday(t.created_at)) * 24 * 60
+  ), 1) AS avg_minutes_to_resolve
+FROM customers c
+JOIN tickets t
+  ON t.customer_id = c.customer_id
+WHERE t.resolved_at IS NOT NULL
+GROUP BY c.segment
+ORDER BY avg_minutes_to_resolve DESC;
+
+------------------------------------------------------------
+
+-- 3) Workload distribution by team (L1 vs L2)
+-- Business question: how is workload split between support tiers?
+
+SELECT
+  a.team,
+  COUNT(t.ticket_id) AS assigned_tickets
+FROM agents a
+LEFT JOIN tickets t
+  ON t.assigned_agent_id = a.agent_id
+GROUP BY a.team
+ORDER BY assigned_tickets DESC;
+
+------------------------------------------------------------
+
+-- 4) Escalation proxy:
+-- Tickets initially handled by L1 but later touched by L2 (based on interactions)
+
+WITH ticket_tiers AS (
+  SELECT
+    t.ticket_id,
+    MIN(a.team) AS first_assigned_team
+  FROM tickets t
+  LEFT JOIN agents a
+    ON t.assigned_agent_id = a.agent_id
+  GROUP BY t.ticket_id
+),
+interaction_teams AS (
+  SELECT
+    i.ticket_id,
+    MAX(a.team) AS highest_team_involved
+  FROM interactions i
+  JOIN agents a
+    ON i.actor_id = a.agent_id
+  GROUP BY i.ticket_id
+)
+SELECT
+  tt.ticket_id,
+  tt.first_assigned_team,
+  it.highest_team_involved
+FROM ticket_tiers tt
+JOIN interaction_teams it
+  ON tt.ticket_id = it.ticket_id
+WHERE tt.first_assigned_team = 'L1'
+  AND it.highest_team_involved = 'L2';
+
+------------------------------------------------------------
+
+-- 5) Priority vs SLA breach risk
+-- Business question: are high-priority tickets breaching SLA?
+
+SELECT
+  priority,
+  COUNT(*) AS total_tickets,
+  SUM(
+    CASE
+      WHEN resolved_at IS NOT NULL
+       AND (julianday(resolved_at) - julianday(created_at)) * 24 * 60 > sla_minutes
+      THEN 1
+      ELSE 0
+    END
+  ) AS sla_breaches
+FROM tickets
+GROUP BY priority
+ORDER BY sla_breaches DESC;
