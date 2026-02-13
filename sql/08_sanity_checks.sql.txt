@@ -1,0 +1,18 @@
+-- Sanity checks after seeds
+
+SELECT COUNT(*) AS customers_cnt FROM customers;
+SELECT COUNT(*) AS agents_cnt FROM agents;
+SELECT COUNT(*) AS tickets_cnt FROM tickets;
+SELECT COUNT(*) AS interactions_cnt FROM interactions;
+
+-- Ticket status distribution
+SELECT status, COUNT(*) AS tickets
+FROM tickets
+GROUP BY status
+ORDER BY tickets DESC;
+
+-- Date range coverage
+SELECT
+  MIN(created_at) AS min_created_at,
+  MAX(created_at) AS max_created_at
+FROM tickets;
