@@ -1,0 +1,76 @@
+-- Day 5: Extended dataset (SQLite)
+-- Adds 30 additional tickets across a 30-day range (ticket_id 200+).
+-- Safe to run multiple times thanks to INSERT OR IGNORE.
+
+PRAGMA foreign_keys = ON;
+
+WITH RECURSIVE date_series(day_offset) AS (
+  SELECT 0
+  UNION ALL
+  SELECT day_offset + 1
+  FROM date_series
+  WHERE day_offset < 29
+),
+ticket_generator AS (
+  SELECT
+    200 + day_offset AS ticket_id,
+    (day_offset % 4) + 1 AS customer_id,
+    (day_offset % 3) + 1 AS assigned_agent_id,
+
+    CASE
+      WHEN day_offset % 5 = 0 THEN 'Billing'
+      WHEN day_offset % 5 = 1 THEN 'Technical'
+      WHEN day_offset % 5 = 2 THEN 'Product'
+      WHEN day_offset % 5 = 3 THEN 'Account'
+      ELSE 'Other'
+    END AS category,
+
+    CASE
+      WHEN day_offset % 4 = 0 THEN 'Low'
+      WHEN day_offset % 4 = 1 THEN 'Medium'
+      WHEN day_offset % 4 = 2 THEN 'High'
+      ELSE 'Urgent'
+    END AS priority,
+
+    CASE
+      WHEN day_offset % 6 IN (0,1) THEN 'Open'
+      WHEN day_offset % 6 IN (2,3) THEN 'Resolved'
+      ELSE 'Closed'
+    END AS status,
+
+    -- Dates as TEXT in YYYY-MM-DD HH:MM:SS (SQLite-friendly)
+    datetime('2026-01-01', '+' || day_offset || ' days') AS created_at,
+
+    CASE
+      -- For Resolved/Closed tickets generate a resolved_at timestamp a few hours later
+      WHEN day_offset % 6 IN (2,3,4) THEN
+        datetime(
+          '2026-01-01',
+          '+' || day_offset || ' days',
+          '+' || (day_offset % 5 + 1) || ' hours'
+        )
+      ELSE NULL
+    END AS resolved_at,
+
+    -- Keep closed_at NULL for now (can be expanded later)
+    NULL AS closed_at,
+
+    120 AS sla_minutes
+  FROM date_series
+)
+
+INSERT OR IGNORE INTO tickets
+(ticket_id, customer_id, assigned_agent_id, category, priority, status,
+ created_at, resolved_at, closed_at, sla_minutes)
+SELECT
+  ticket_id,
+  customer_id,
+  assigned_agent_id,
+  category,
+  priority,
+  status,
+  created_at,
+  resolved_at,
+  closed_at,
+  sla_minutes
+FROM ticket_generator;

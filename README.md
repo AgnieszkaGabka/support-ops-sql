@@ -80,6 +80,11 @@ Business-oriented analysis:
 - Escalation proxy (L1 -> L2 involvement)
 - Priority vs SLA breach analysis
 
+## Day 5
+Extended dataset:
+- Added 30 additional tickets across a 30-day period (ticket_id 200+)
+- Varied category, priority and status distribution
+- Enables more realistic time trends and SLA analysis
 
 ## Project Structure
 
